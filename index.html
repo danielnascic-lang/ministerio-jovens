@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- JOVENS · Ministério de Jovens 2027
+<!-- JOVENS · Ministério de Jovens
 Aplicativo de organização em arquivo único (HTML, CSS e JavaScript), sem dependências externas.
 Seções: Painel, Calendário, Projetos, Membros, Organograma (líderes: Daniel de Lima do Nascimento e Beatriz Figueira Tompson do Nascimento).
 Frentes: Pastoreio e discipulado, Ensino · EBD, Eventos e integração.
@@ -51,6 +51,29 @@ body.locked #login{display:flex}body.locked .app,body.locked .toast{display:none
 .userbox{border-top:1px solid #344357;padding-top:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px}.userbox strong{display:block;color:#fff;font-size:13px}.userbox small{color:#aab8c9}.userbox .ub-actions{display:flex;gap:6px}.userbox .btn{background:transparent;color:#dbe4ee;border-color:#344357}
 @media(max-width:900px){.userbox{border:0;padding-top:0}}
 @media(prefers-reduced-motion:reduce){#login{animation:none}}
+
+/* Rol de membros: alinhamento */
+#view-membros .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin-bottom:12px}
+#view-membros .filters input{flex:1 1 220px;max-width:none;min-width:0}
+#view-membros .filters select{flex:0 1 190px;max-width:none;min-width:0}
+.member-summary{font-size:12px;color:var(--muted);margin:0 0 14px;display:flex;flex-wrap:wrap;gap:6px 14px}
+.member-summary b{color:var(--ink)}
+.member-grid{align-items:stretch}
+.member{display:flex;flex-direction:column;gap:12px;min-width:0;height:100%}
+.member-head{display:flex;align-items:center;gap:11px;min-width:0}
+.member .avatar{margin:0;flex:0 0 38px;width:38px;height:38px}
+.mh-text{min-width:0;display:grid;gap:4px;justify-items:start}
+.member h4{margin:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.member-info{margin:0;display:grid;gap:6px;font-size:12px}
+.member-info>div{display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;align-items:baseline}
+.member-info dt{color:var(--muted)}
+.member-info dd{margin:0;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.member-info dd.nil{color:#a3aab4;font-weight:400}
+.member .item-actions{margin-top:auto;padding-top:11px;border-top:1px solid #f0f1f3}
+.member .item-actions .btn{flex:1}
+.form-grid input:not([type=checkbox]),.form-grid select{min-height:40px}
+.form-grid{align-items:end}
+@media(max-width:560px){#view-membros .filters select{flex:1 1 100%}}
 </style>
 </head>
 <body class="locked">
@@ -100,108 +123,4 @@ body.locked #login{display:flex}body.locked .app,body.locked .toast{display:none
 </section>
 <section class="view" id="view-equipe">
  <div class="top"><div><div class="eyebrow">Governança e serviço</div><h2>Organograma</h2><p>Registre quem compõe a equipe e pelo que cada pessoa responde.</p></div><button class="btn primary" onclick="openRole()">＋ Adicionar função</button></div>
- <div class="panel"><div class="panel-head"><h3>Estrutura de serviço</h3><span class="muted">Estrutura editável</span></div><div class="org" id="orgChart"></div></div>
- <div class="panel"><div class="panel-head"><h3>Responsabilidades cadastradas</h3></div><div id="roleList" class="list"></div></div>
-</section>
-<section class="view" id="view-membros">
- <div class="top"><div><div class="eyebrow">Pessoas</div><h2>Rol de membros</h2><p>Cadastro simples para apoiar o cuidado e a organização.</p></div><button class="btn primary" onclick="openMember()">＋ Novo membro</button></div>
- <div class="panel"><div class="filters"><input id="memberSearch" placeholder="Buscar por nome..." oninput="renderMembers()"><select id="memberFilter" onchange="renderMembers()"><option value="">Todas as situações</option><option>Ativo</option><option>Em acompanhamento</option><option>Visitante</option><option>Inativo</option></select></div><div class="member-grid" id="memberList"></div></div>
- <p class="muted" style="font-size:12px">Privacidade: mantenha apenas informações necessárias ao serviço. Evite registrar detalhes íntimos ou sensíveis neste painel.</p>
-</section>
-<section class="view" id="view-usuarios"><div class="top"><div><div class="eyebrow">Acesso</div><h2>Usuários</h2><p>Quem pode entrar no sistema.</p></div><div class="actions"><button class="btn" onclick="exportUsers()">Copiar lista</button><button class="btn primary" onclick="openUser()">＋ Novo usuário</button></div></div><div class="panel"><div class="list" id="userList"></div></div></section>
-</main></div>
-<div class="modal-back" id="modalBack" onclick="if(event.target===this)closeModal()"><div class="modal"><div id="modalContent"></div></div></div><div class="toast" id="toast"></div>
-<script>
-const $=id=>document.getElementById(id);
-const today=new Date(); let calDate=new Date(today.getFullYear(),today.getMonth(),1);
-let data={events:[],projects:[],members:[],roles:[
- {id:'r1',name:'Coordenação de jovens',person:'',responsibility:'Coordenar a visão geral, alinhar as frentes e acompanhar a equipe.'},
- {id:'r2',name:'Pastoreio e discipulado',person:'',responsibility:'Acompanhar os jovens, promover discipulado e identificar necessidades de cuidado.'},
- {id:'r3',name:'Ensino · EBD',person:'',responsibility:'Planejar aulas, organizar professores e acompanhar o desenvolvimento do ensino.'},
- {id:'r4',name:'Eventos e integração',person:'',responsibility:'Planejar encontros, mobilizar participantes e cuidar da execução dos eventos.'}
-]};
-try{const saved=localStorage.getItem('copilotoJovens2027');if(saved)data={...data,...JSON.parse(saved)}}catch(e){}
-function save(){localStorage.setItem('copilotoJovens2027',JSON.stringify(data));renderAll()}
-function uid(){return 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function dateBR(s){if(!s)return '';let [y,m,d]=s.split('-');return `${d}/${m}/${y}`}
-function frontName(f){return ({pastoreio:'Pastoreio',ebd:'EBD',eventos:'Eventos'})[f]||'Geral'}
-function showView(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));$('view-'+v).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));renderAll();window.scrollTo(0,0)}
-$('nav').addEventListener('click',e=>{let b=e.target.closest('button[data-view]');if(b)showView(b.dataset.view)});
-function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2200)}
-function modal(content){$('modalContent').innerHTML=content;$('modalBack').classList.add('show')}
-function closeModal(){$('modalBack').classList.remove('show')}
-function openEvent(id=''){let x=data.events.find(e=>e.id===id)||{};modal(`<h3>${id?'Editar evento':'Novo evento'}</h3><form id="eventForm" class="form-grid">
-<label class="full">Nome do evento<input name="title" required maxlength="90" value="${esc(x.title||'')}" placeholder="Ex.: Encontro de jovens"></label>
-<label>Data<input type="date" name="date" required value="${x.date||''}"></label><label>Horário<input type="time" name="time" value="${x.time||''}"></label>
-<label>Frente de atuação<select name="front"><option value="pastoreio" ${x.front==='pastoreio'?'selected':''}>Pastoreio e discipulado</option><option value="ebd" ${x.front==='ebd'?'selected':''}>EBD</option><option value="eventos" ${x.front==='eventos'?'selected':''}>Eventos</option></select></label>
-<label>Local<input name="place" value="${esc(x.place||'')}" placeholder="Local (opcional)"></label>
-<label class="full">Observações<textarea name="notes" rows="2">${esc(x.notes||'')}</textarea></label></form><div class="modal-foot">${id?`<button class="btn danger" onclick="deleteEvent('${id}')">Excluir</button>`:'<span></span>'}<div class="right"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="submitEvent('${id}')">Salvar</button></div></div>`)}
-function submitEvent(id){let f=$('eventForm');if(!f.reportValidity())return;let o=Object.fromEntries(new FormData(f));if(id)Object.assign(data.events.find(e=>e.id===id),o);else data.events.push({id:uid(),...o});closeModal();save();toast('Evento salvo.')}
-function deleteEvent(id){if(!confirm('Excluir este evento?'))return;data.events=data.events.filter(e=>e.id!==id);closeModal();save();toast('Evento excluído.')}
-function moveMonth(n){calDate=new Date(calDate.getFullYear(),calDate.getMonth()+n,1);renderCalendar()}
-function goToday(){calDate=new Date(today.getFullYear(),today.getMonth(),1);renderCalendar()}
-function renderCalendar(){let y=calDate.getFullYear(),m=calDate.getMonth();$('monthLabel').textContent=calDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});let first=new Date(y,m,1),start=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate();let out=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d=>`<div class="dow">${d}</div>`).join('');for(let i=0;i<42;i++){let day=i-start+1,dt,cls='day';if(day<1){dt=new Date(y,m-1,prev+day);cls+=' out'}else if(day>days){dt=new Date(y,m+1,day-days);cls+=' out'}else dt=new Date(y,m,day);let iso=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;if(iso===today.toISOString().slice(0,10))cls+=' today';let ev=data.events.filter(e=>e.date===iso).sort((a,b)=>(a.time||'').localeCompare(b.time||''));out+=`<div class="${cls}"><div class="daynum">${dt.getDate()}${ev.length?`<span class="muted">${ev.length}</span>`:''}</div>${ev.slice(0,3).map(e=>`<button class="event-chip ${e.front}" title="${esc(e.title)}" onclick="openEvent('${e.id}')">${esc((e.time?e.time+' · ':'')+e.title)}</button>`).join('')}${ev.length>3?`<small class="muted">+${ev.length-3} eventos</small>`:''}</div>`} $('calendar').innerHTML=out}
-function renderEventList(){let arr=[...data.events].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));$('eventList').innerHTML=arr.length?arr.map(e=>`<div class="item"><div class="item-main"><h4>${esc(e.title)} <span class="pill ${e.front}">${frontName(e.front)}</span></h4><p>${dateBR(e.date)} ${e.time?'· '+e.time:''} ${e.place?'· '+esc(e.place):''}</p></div><div class="item-actions"><button class="btn small" onclick="makeProject('${e.id}')">Gerar projeto</button><button class="btn small" onclick="openEvent('${e.id}')">Editar</button></div></div>`).join(''):'<div class="empty"><strong>Nenhum evento cadastrado</strong>Adicione um compromisso para começar a organizar sua agenda.</div>'}
-function openProject(eventId=''){let e=data.events.find(x=>x.id===eventId)||{};modal(`<h3>Novo projeto</h3><form id="projectForm" class="form-grid"><label class="full">Nome do projeto<input name="title" required value="${esc(e.title||'')}" placeholder="Ex.: Retiro de jovens"></label><label>Frente<select name="front"><option value="pastoreio" ${e.front==='pastoreio'?'selected':''}>Pastoreio e discipulado</option><option value="ebd" ${e.front==='ebd'?'selected':''}>EBD</option><option value="eventos" ${e.front==='eventos'?'selected':''}>Eventos</option></select></label><label>Prazo<input type="date" name="due" value="${e.date||''}"></label><label class="full">Objetivo / descrição<textarea name="description" rows="3" placeholder="O que precisa ser realizado?"></textarea></label></form><div class="modal-foot"><span></span><div class="right"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="submitProject()">Criar projeto</button></div></div>`)}
-function submitProject(){let f=$('projectForm');if(!f.reportValidity())return;let o=Object.fromEntries(new FormData(f));data.projects.push({id:uid(),...o,stages:[{id:uid(),name:'Preparação',tasks:[]},{id:uid(),name:'Execução',tasks:[]},{id:uid(),name:'Avaliação e conclusão',tasks:[]}]});closeModal();save();toast('Projeto criado.')}
-function makeProject(eventId){openProject(eventId)}
-function addStage(pid){let name=prompt('Nome da nova etapa:');if(!name)return;data.projects.find(p=>p.id===pid).stages.push({id:uid(),name,tasks:[]});save()}
-function addTask(pid,sid){let name=prompt('Descreva a tarefa:');if(!name)return;data.projects.find(p=>p.id===pid).stages.find(s=>s.id===sid).tasks.push({id:uid(),name,done:false});save()}
-function toggleTask(pid,sid,tid,checked){let t=data.projects.find(p=>p.id===pid).stages.find(s=>s.id===sid).tasks.find(t=>t.id===tid);t.done=checked;save()}
-function editProject(pid){let p=data.projects.find(x=>x.id===pid);modal(`<h3>Editar projeto</h3><form id="editProject" class="form-grid"><label class="full">Nome<input name="title" required value="${esc(p.title)}"></label><label>Frente<select name="front"><option value="pastoreio" ${p.front==='pastoreio'?'selected':''}>Pastoreio</option><option value="ebd" ${p.front==='ebd'?'selected':''}>EBD</option><option value="eventos" ${p.front==='eventos'?'selected':''}>Eventos</option></select></label><label>Prazo<input type="date" name="due" value="${p.due||''}"></label><label class="full">Descrição<textarea name="description" rows="3">${esc(p.description||'')}</textarea></label></form><div class="modal-foot"><button class="btn danger" onclick="deleteProject('${pid}')">Excluir projeto</button><div class="right"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveProject('${pid}')">Salvar</button></div></div>`)}
-function saveProject(pid){let f=$('editProject');if(!f.reportValidity())return;Object.assign(data.projects.find(p=>p.id===pid),Object.fromEntries(new FormData(f)));closeModal();save()}
-function deleteProject(pid){if(!confirm('Excluir este projeto e suas tarefas?'))return;data.projects=data.projects.filter(p=>p.id!==pid);closeModal();save()}
-function renderProjects(){let el=$('projectList');$('projectCount').textContent=data.projects.length+' projeto(s)';el.innerHTML=data.projects.length?data.projects.map(p=>{let tasks=p.stages.flatMap(s=>s.tasks),done=tasks.filter(t=>t.done).length,pct=tasks.length?Math.round(done/tasks.length*100):0;return `<article class="project"><div class="panel-head"><span class="pill ${p.front}">${frontName(p.front)}</span><button class="btn small" onclick="editProject('${p.id}')">Editar</button></div><h4>${esc(p.title)}</h4><p class="muted" style="font-size:12px">${esc(p.description||'Sem descrição')}${p.due?' · Prazo: '+dateBR(p.due):''}</p><div class="progress"><span style="width:${pct}%"></span></div><small class="muted">${done}/${tasks.length} tarefas concluídas · ${pct}%</small>${p.stages.map(s=>`<div class="stage"><div class="stage-head"><h4>${esc(s.name)}</h4><button class="btn small" onclick="addTask('${p.id}','${s.id}')">＋ Tarefa</button></div>${s.tasks.length?s.tasks.map(t=>`<label class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${p.id}','${s.id}','${t.id}',this.checked)"><span>${esc(t.name)}</span></label>`).join(''):'<p class="muted" style="font-size:11px;margin:8px 0 0">Nenhuma tarefa nesta etapa.</p>'}</div>`).join('')}<button class="btn small" style="margin-top:10px" onclick="addStage('${p.id}')">＋ Adicionar etapa</button></article>`}).join(''):'<div class="empty" style="grid-column:1/-1"><strong>Seus projetos aparecerão aqui</strong>Crie um projeto do zero ou gere um a partir de um evento da agenda.</div>'}
-function openRole(id=''){let r=data.roles.find(x=>x.id===id)||{};modal(`<h3>${id?'Editar função':'Adicionar função'}</h3><form id="roleForm" class="form-grid"><label class="full">Função / componente<input name="name" required value="${esc(r.name||'')}"></label><label class="full">Responsável (opcional)<input name="person" value="${esc(r.person||'')}"></label><label class="full">Responsabilidades<textarea name="responsibility" rows="4" required>${esc(r.responsibility||'')}</textarea></label></form><div class="modal-foot">${id?`<button class="btn danger" onclick="deleteRole('${id}')">Excluir</button>`:'<span></span>'}<div class="right"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveRole('${id}')">Salvar</button></div></div>`)}
-function saveRole(id){let f=$('roleForm');if(!f.reportValidity())return;let o=Object.fromEntries(new FormData(f));if(id)Object.assign(data.roles.find(x=>x.id===id),o);else data.roles.push({id:uid(),...o});closeModal();save()}
-function deleteRole(id){if(!confirm('Excluir esta função do organograma?'))return;data.roles=data.roles.filter(x=>x.id!==id);closeModal();save()}
-function renderOrg(){$('orgChart').innerHTML=`<div class="org-root">Líderes<br><small style="font-weight:400;opacity:.9;line-height:1.6">Daniel de Lima do Nascimento<br>Beatriz Figueira Tompson do Nascimento</small></div><div class="org-children">${data.roles.map(r=>`<div class="org-card"><strong>${esc(r.name)}</strong><small>${esc(r.person||'Responsável não definido')}</small><p>${esc(r.responsibility)}</p><button class="btn small" style="margin-top:10px" onclick="openRole('${r.id}')">Editar função</button></div>`).join('')}</div>`;$('roleList').innerHTML=data.roles.length?data.roles.map(r=>`<div class="item"><div class="item-main"><h4>${esc(r.name)}</h4><p>${esc(r.responsibility)}</p></div><button class="btn small" onclick="openRole('${r.id}')">Editar</button></div>`).join(''):'<div class="empty">Nenhuma função cadastrada.</div>'}
-function openMember(id=''){let m=data.members.find(x=>x.id===id)||{};modal(`<h3>${id?'Editar membro':'Novo membro'}</h3><form id="memberForm" class="form-grid"><label class="full">Nome completo<input name="name" required value="${esc(m.name||'')}"></label><label>Situação<select name="status">${['Ativo','Em acompanhamento','Visitante','Inativo'].map(s=>`<option ${m.status===s?'selected':''}>${s}</option>`).join('')}</select></label><label>Frente de vínculo<select name="front"><option value="">Não definida</option><option value="pastoreio" ${m.front==='pastoreio'?'selected':''}>Pastoreio</option><option value="ebd" ${m.front==='ebd'?'selected':''}>EBD</option><option value="eventos" ${m.front==='eventos'?'selected':''}>Eventos</option></select></label><label>Contato (opcional)<input name="contact" value="${esc(m.contact||'')}" placeholder="Telefone ou e-mail"></label><label>Data de entrada<input type="date" name="since" value="${m.since||''}"></label><label class="full">Observação administrativa<textarea name="notes" rows="2">${esc(m.notes||'')}</textarea></label></form><div class="modal-foot">${id?`<button class="btn danger" onclick="deleteMember('${id}')">Excluir</button>`:'<span></span>'}<div class="right"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveMember('${id}')">Salvar</button></div></div>`)}
-function saveMember(id){let f=$('memberForm');if(!f.reportValidity())return;let o=Object.fromEntries(new FormData(f));if(id)Object.assign(data.members.find(x=>x.id===id),o);else data.members.push({id:uid(),...o});closeModal();save();toast('Cadastro salvo.')}
-function deleteMember(id){if(!confirm('Excluir este cadastro?'))return;data.members=data.members.filter(x=>x.id!==id);closeModal();save()}
-function renderMembers(){let q=($('memberSearch')?.value||'').toLowerCase(),filter=$('memberFilter')?.value||'',arr=data.members.filter(m=>m.name.toLowerCase().includes(q)&&(!filter||m.status===filter));$('memberList').innerHTML=arr.length?arr.map(m=>`<div class="member"><div class="avatar">${esc(m.name.trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</div><h4>${esc(m.name)}</h4><p>${esc(m.status||'Ativo')} ${m.front?'· '+frontName(m.front):''}</p>${m.contact?`<p style="margin-top:5px">${esc(m.contact)}</p>`:''}<div class="item-actions"><button class="btn small" onclick="openMember('${m.id}')">Editar</button><button class="btn small danger" onclick="deleteMember('${m.id}')">Excluir</button></div></div>`).join(''):'<div class="empty" style="grid-column:1/-1"><strong>Nenhum membro encontrado</strong>Cadastre pessoas para manter o rol organizado.</div>'}
-function renderHome(){let future=data.events.filter(e=>e.date>=today.toISOString().slice(0,10));$('statEvents').textContent=future.length;$('statProjects').textContent=data.projects.length;$('statMembers').textContent=data.members.length;$('statTasks').textContent=data.projects.flatMap(p=>p.stages.flatMap(s=>s.tasks)).filter(t=>!t.done).length;$('frontP').innerHTML=data.events.filter(e=>e.front==='pastoreio').length+' <small class="muted">eventos</small>';$('frontE').innerHTML=data.events.filter(e=>e.front==='ebd').length+' <small class="muted">eventos</small>';$('frontV').innerHTML=data.events.filter(e=>e.front==='eventos').length+' <small class="muted">eventos</small>';let up=[...future].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,5);$('upcoming').innerHTML=up.length?up.map(e=>`<div class="item"><div class="item-main"><h4>${esc(e.title)}</h4><p>${dateBR(e.date)} ${e.time?'· '+e.time:''}</p></div><span class="pill ${e.front}">${frontName(e.front)}</span></div>`).join(''):'<div class="empty">Nenhum compromisso futuro.</div>';let ps=data.projects.slice(0,4);$('homeProjects').innerHTML=ps.length?ps.map(p=>`<div class="item"><div class="item-main"><h4>${esc(p.title)}</h4><p>${frontName(p.front)}${p.due?' · '+dateBR(p.due):''}</p></div><button class="btn small" onclick="showView('projetos')">Abrir</button></div>`).join(''):'<div class="empty">Nenhum projeto criado.</div>'}
-function renderAll(){renderHome();renderCalendar();renderEventList();renderProjects();renderOrg();renderMembers()}
-renderAll();
-
-/* ===== Login e usuários ===== */
-const PW_ITER=150000,_enc=new TextEncoder();
-const BASE_USERS=[{user:'Daniel',name:'Daniel de Lima do Nascimento',admin:true,salt:'46b2bc44cfd388041323ec9036f6ec1e',hash:'6a571a9951db6499cb83c1fa1b785bf6d50ae121bcf3a450773ab80ddd668768'}];
-let extraUsers=[],cur=null,fails=0,lockUntil=0;
-try{extraUsers=JSON.parse(localStorage.getItem('jovensUsers2027')||'[]')}catch(e){}
-function saveUsers(){try{localStorage.setItem('jovensUsers2027',JSON.stringify(extraUsers))}catch(e){toast('Não foi possível salvar neste navegador.')}}
-function allUsers(){const m=new Map();BASE_USERS.forEach(u=>m.set(u.user.toLowerCase(),u));extraUsers.forEach(u=>{u.removed?m.delete(u.user.toLowerCase()):m.set(u.user.toLowerCase(),u)});return[...m.values()]}
-async function hashPw(pw,salt){const k=await crypto.subtle.importKey('raw',_enc.encode(pw),'PBKDF2',false,['deriveBits']);const b=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:_enc.encode(salt),iterations:PW_ITER},k,256);return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-function newSalt(){return[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,'0')).join('')}
-async function makeUser(user,name,pw,admin){const salt=newSalt();return{user,name,admin:!!admin,salt,hash:await hashPw(pw,salt)}}
-function lgErr(m){$('lgErr').textContent=m}
-function startSession(u){cur=u;try{sessionStorage.setItem('jovensSess',u.user.toLowerCase())}catch(e){}document.body.classList.remove('locked');$('whoName').textContent=u.user;$('whoRole').textContent=u.admin?'Administrador':'Usuário';$('navUsers').style.display=u.admin?'':'none';$('lgPass').value='';lgErr('');showView('inicio')}
-function logout(){try{sessionStorage.removeItem('jovensSess')}catch(e){}cur=null;closeModal();document.body.classList.add('locked');$('lgUser').value='';$('lgPass').value='';$('lgUser').focus()}
-$('loginForm').addEventListener('submit',async e=>{e.preventDefault();
- if(Date.now()<lockUntil){lgErr('Muitas tentativas. Aguarde '+Math.ceil((lockUntil-Date.now())/1000)+'s.');return}
- const name=$('lgUser').value.trim().toLowerCase(),pw=$('lgPass').value,u=allUsers().find(x=>x.user.toLowerCase()===name);let ok=false;
- try{ok=u?(await hashPw(pw,u.salt))===u.hash:(await hashPw(pw,'0'.repeat(32)),false)}catch(ex){lgErr('Este navegador não permite o login seguro (é preciso https ou arquivo local).');return}
- if(ok){fails=0;startSession(u)}else{fails++;if(fails>=5){fails=0;lockUntil=Date.now()+30000;lgErr('Muitas tentativas. Aguarde 30s.')}else lgErr('Usuário ou senha incorretos.')}
-});
-function openPwd(){modal(`<h3>Alterar minha senha</h3><form id="pwdForm" class="form-grid" onsubmit="return false"><label class="full">Senha atual<input type="password" name="old" autocomplete="current-password" required></label><label class="full">Nova senha (mínimo 8 caracteres)<input type="password" name="n1" autocomplete="new-password" minlength="8" required></label><label class="full">Repita a nova senha<input type="password" name="n2" autocomplete="new-password" minlength="8" required></label></form><div class="modal-foot"><span></span><div class="right"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="savePwd()">Salvar</button></div></div>`)}
-async function savePwd(){const f=$('pwdForm');if(!f.reportValidity())return;const o=Object.fromEntries(new FormData(f));
- if(o.n1!==o.n2){toast('As senhas novas não conferem.');return}
- if((await hashPw(o.old,cur.salt))!==cur.hash){toast('Senha atual incorreta.');return}
- const nu=await makeUser(cur.user,cur.name,o.n1,cur.admin);extraUsers=extraUsers.filter(x=>x.user.toLowerCase()!==cur.user.toLowerCase());extraUsers.push(nu);saveUsers();cur=nu;closeModal();toast('Senha alterada.')}
-function openUser(){modal(`<h3>Novo usuário</h3><form id="userForm" class="form-grid" onsubmit="return false"><label>Usuário<input name="user" required maxlength="30" pattern="[A-Za-z0-9._\\-]+" autocapitalize="none" placeholder="Ex.: Beatriz"></label><label>Nome completo (opcional)<input name="name" maxlength="80"></label><label class="full">Senha (mínimo 8 caracteres)<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label class="full" style="display:flex;gap:8px;align-items:center;grid-template-columns:none"><input type="checkbox" name="admin" style="width:auto"> Administrador (pode gerenciar usuários)</label></form><div class="modal-foot"><span></span><div class="right"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveUser()">Criar</button></div></div>`)}
-async function saveUser(){const f=$('userForm');if(!f.reportValidity())return;const o=Object.fromEntries(new FormData(f));
- if(allUsers().some(x=>x.user.toLowerCase()===o.user.toLowerCase())){toast('Esse usuário já existe.');return}
- extraUsers=extraUsers.filter(x=>x.user.toLowerCase()!==o.user.toLowerCase());extraUsers.push(await makeUser(o.user,o.name,o.pw,o.admin));saveUsers();closeModal();renderUsers();toast('Usuário criado.')}
-async function resetUser(name){const u=allUsers().find(x=>x.user===name);if(!u)return;const p=prompt('Nova senha para '+name+' (mínimo 8 caracteres):');if(!p)return;if(p.length<8){toast('Senha muito curta.');return}
- const nu=await makeUser(u.user,u.name,p,u.admin);extraUsers=extraUsers.filter(x=>x.user.toLowerCase()!==name.toLowerCase());extraUsers.push(nu);saveUsers();if(cur&&cur.user===name)cur=nu;toast('Senha redefinida.')}
-function delUser(name){const list=allUsers(),u=list.find(x=>x.user===name);if(!u)return;
- if(cur&&cur.user===name){toast('Você não pode excluir o próprio usuário.');return}
- if(u.admin&&list.filter(x=>x.admin).length<2){toast('É preciso manter ao menos um administrador.');return}
- if(!confirm('Excluir o usuário '+name+'?'))return;extraUsers=extraUsers.filter(x=>x.user.toLowerCase()!==name.toLowerCase());extraUsers.push({user:name,removed:true});saveUsers();renderUsers()}
-function exportUsers(){const t=JSON.stringify(allUsers(),null,1);(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Lista copiada.')).catch(()=>prompt('Copie a lista:',t))}
-function renderUsers(){const el=$('userList');if(!el||!cur||!cur.admin)return;el.innerHTML=allUsers().map(u=>`<div class="item"><div class="item-main"><h4>${esc(u.user)} ${u.admin?'<span class="pill">Administrador</span>':''}</h4><p>${esc(u.name||'')}</p></div><div class="item-actions"><button class="btn small" onclick="resetUser('${esc(u.user)}')">Nova senha</button><button class="btn small danger" onclick="delUser('${esc(u.user)}')">Excluir</button></div></div>`).join('')}
-const _renderAll=renderAll;renderAll=function(){_renderAll();renderUsers()};
-try{const sn=sessionStorage.getItem('jovensSess'),su=sn&&allUsers().find(x=>x.user.toLowerCase()===sn);if(su)startSession(su)}catch(e){}
-</script>
-</body></html>
+ <div class="panel"><div class="panel-head"><h3>Estrutura de serviço</h3><span class="muted">Estrutura editáv
